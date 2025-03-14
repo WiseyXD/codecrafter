@@ -2,6 +2,10 @@
   "name": "@repo/db",
   "module": "src/index.ts",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -9,6 +13,11 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^6.5.0",
+    "@prisma/client": "^6.5.0",
+    "@types/pg": "^8.11.11",
+    "pg": "^8.14.0",
+    "pg-cloudflare": "^1.1.1",
     "prisma": "^6.5.0"
   }
 }
