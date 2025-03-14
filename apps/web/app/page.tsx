@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import Image, { type ImageProps } from "next/image";
 
 type Props = Omit<ImageProps, "src"> & {
@@ -17,5 +18,10 @@ const ThemeImage = (props: Props) => {
 };
 
 export default function Home() {
-  return <h1 className="text-2xl font-bold">Hello World</h1>;
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">Hello World</h1>
+      <Button variant={"outline"}>Click me</Button>
+    </div>
+  );
 }
