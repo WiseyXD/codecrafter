@@ -50,7 +50,7 @@ model User {
   emailVerified DateTime? @map("email_verified")
   image         String?
   role          Role      @default(ADMIN)
-  cityId        String?   @map("cityid")
+  cityId        String?   
   accounts      Account[]
   sessions      Session[]
   city          City?     @relation(fields: [cityId], references: [id])
