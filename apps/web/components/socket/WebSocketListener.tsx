@@ -20,14 +20,10 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
   const [isLoadingZone, setIsLoadingZone] = useState(false);
   const [isStoringAlert, setIsStoringAlert] = useState(false);
 
-  // Replace with your Django WebSocket server URL
+  // WebSocket server URL
   const WS_URL = "wss://1826-103-218-100-74.ngrok-free.app/ws/";
 
-  // Backup URL in case the main one fails
-  const BACKUP_WS_URL = "ws://localhost:8000/ws/random/";
-
-  const [currentUrl, setCurrentUrl] = useState(WS_URL);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [currentUrl] = useState(WS_URL);
 
   // Fetch default zone ID from API
   const fetchDefaultZone = async () => {
@@ -146,16 +142,6 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
   }, [cityId]);
 
   const connectWebSocket = () => {
-    // Increment connection attempts
-    setConnectionAttempts((prev) => prev + 1);
-
-    // Try alternate URL after 3 attempts
-    if (connectionAttempts >= 3 && currentUrl === WS_URL) {
-      setCurrentUrl(BACKUP_WS_URL);
-      //@ts-ignore
-      toast.info("Trying alternate connection URL...");
-    }
-
     let ws;
     try {
       ws = new WebSocket(currentUrl);
@@ -267,7 +253,8 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
   };
 
   useEffect(() => {
-    // Connect to WebSocket when component mounts or currentUrl changes
+    // Connect to WebSocket and enable DB storage when component mounts
+    setIsStoringToDB(true);
     const ws = connectWebSocket();
 
     // Clean up on unmount
@@ -276,7 +263,7 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
         ws.close();
       }
     };
-  }, [currentUrl]);
+  }, []);
 
   return (
     <div className="p-4">
@@ -293,10 +280,7 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
 
           {!isConnected && (
             <button
-              onClick={() => {
-                setConnectionAttempts(0);
-                connectWebSocket();
-              }}
+              onClick={() => connectWebSocket()}
               className="ml-4 bg-blue-500 text-white px-3 py-1 rounded text-sm"
             >
               Reconnect
@@ -305,8 +289,7 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
         </div>
 
         <div className="text-sm text-gray-600 mt-1">
-          <div>Current URL: {currentUrl}</div>
-          <div>Connection attempts: {connectionAttempts}</div>
+          <div>Server URL: {currentUrl}</div>
           <div>City ID: {cityId || "None"}</div>
           <div className="flex items-center">
             <span>Zone ID: </span>
@@ -343,18 +326,6 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
           </div>
 
           <div className="flex mt-2">
-            {!isConnected && connectionAttempts > 0 && (
-              <button
-                onClick={() => {
-                  setCurrentUrl(currentUrl === WS_URL ? BACKUP_WS_URL : WS_URL);
-                  setConnectionAttempts(0);
-                }}
-                className="mr-2 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm"
-              >
-                Try {currentUrl === WS_URL ? "localhost" : "ngrok"} URL
-              </button>
-            )}
-
             <button
               onClick={() => setIsStoringToDB(!isStoringToDB)}
               className={`mr-2 px-3 py-1 rounded text-sm ${
