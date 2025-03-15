@@ -7,7 +7,7 @@
     "./server": "./src/server.ts"
   },
   "scripts": {
-    "db:generate": "bun prisma generate",
+    "generate": "bun prisma generate",
     "postinstall": "bun prisma generate"
   },
 
