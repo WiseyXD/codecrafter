@@ -1,25 +1,15 @@
-"use client";
-import { useSession } from "next-auth/react";
 import React from "react";
+import DashboardComponent from "@/components/dashboard/DashboardClient";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
-export default function Dashboard() {
-  const { data: session } = useSession();
-  const handleConnectHono = async () => {
-    try {
-      const resp = await fetch("/api/connect-hono");
-      const data = await resp.json();
-      console.log(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+export default async function Dashboard() {
+  const session = await auth();
+  const isOnboarded = session?.user?.isOnboarded;
 
-  return (
-    <>
-      User here with the user name - {session?.user?.name}
-      <div>
-        <button onClick={handleConnectHono}>Connect Hono</button>
-      </div>
-    </>
-  );
+  if (!isOnboarded) {
+    redirect("/onboarding");
+  }
+
+  return <DashboardComponent />;
 }

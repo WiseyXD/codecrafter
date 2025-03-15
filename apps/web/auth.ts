@@ -1,3 +1,4 @@
+// auth.ts
 import NextAuth from "next-auth";
 import type { Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
@@ -8,15 +9,20 @@ export interface ExtendedSession extends Session {
   user: {
     jwt: string;
     id: string;
+    email: string;
     image: string;
     name: string;
+    role: string;
+    isOnboarded: boolean;
   };
 }
 
 // Extended token interface
 export interface ExtendedToken extends JWT {
   jwt: string;
-  uid: string;
+  id: string;
+  role: string;
+  isOnboarded: boolean;
 }
 
 // Create and export auth handlers with proper typing
@@ -35,3 +41,9 @@ export const {
   signOut: () => Promise<void>;
   auth: any;
 } = NextAuth(authConfig);
+
+// Helper to get the session with proper typing
+export async function getAuthSession(): Promise<ExtendedSession | null> {
+  const session = await auth();
+  return session as ExtendedSession | null;
+}
