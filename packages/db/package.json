@@ -6,6 +6,11 @@
     ".": "./src/index.ts",
     "./server": "./src/server.ts"
   },
+  "scripts": {
+    "db:generate": "bun prisma generate",
+    "postinstall": "bun prisma generate"
+  },
+
   "devDependencies": {
     "@types/bun": "latest"
   },
