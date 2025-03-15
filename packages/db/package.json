@@ -8,7 +8,7 @@
   },
   "scripts": {
     "db:generate": "bun prisma generate",
-    "postinstall": "bun prisma generate"
+    "postinstall": "bunx prisma generate"
   },
 
   "devDependencies": {
