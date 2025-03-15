@@ -43,20 +43,20 @@ model Session {
   @@map("sessions")
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  role          Role      @default(ADMIN)
-  cityId        String?
-  accounts      Account[]
-  sessions      Session[]
-  city          City?     @relation(fields: [cityId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime?  @updatedAt
-  isOnboarded    Boolean    @default(false)
+model user {
+  id            string    @id @default(cuid())
+  name          string?
+  email         string?   @unique
+  emailverified datetime? @map("email_verified")
+  image         string?
+  role          role      @default(admin)
+  cityid        string?
+  accounts      account[]
+  sessions      session[]
+  city          city?     @relation(fields: [cityid], references: [id])
+  createdat     datetime  @default(now())
+  updatedat     datetime?  @updatedat
+  isonboarded    boolean    @default(false)
   @@map("users")
 }
 
