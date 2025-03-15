@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
+        //@ts-ignore
         role: true,
         isOnboarded: true,
       },
