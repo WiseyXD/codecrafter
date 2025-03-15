@@ -1,8 +1,8 @@
-export type AlertSeverity = "critical" | "high" | "medium" | "low";
-export type AlertStatus = "unresolved" | "investigating" | "resolved";
-export type AlertCategory = "intrusion" | "anomaly" | "movement"; // Renamed from AlertType to avoid conflict
 export type FilterType = "all" | AlertStatus;
 export type SeverityFilterType = "all" | AlertSeverity;
+export type AlertSeverity = "critical" | "high" | "medium" | "low";
+export type AlertStatus = "unresolved" | "investigating" | "resolved";
+export type AlertCategory = "intrusion" | "anomaly" | "movement";
 
 export interface SensorData {
   video: boolean;
@@ -14,10 +14,43 @@ export interface SensorData {
   };
 }
 
+// WebSocket alert interface that matches the Django server output
+export interface WSAlert {
+  type: string;
+  severity: string;
+  timestamp: string;
+  location: string;
+  description: string;
+  status: string;
+  thumbnail?: string;
+  sensorData?: {
+    video: boolean;
+    vibration: boolean;
+    thermal: boolean;
+    weather: {
+      temp: number;
+      conditions: string;
+    };
+  };
+}
+
+// Use your existing AlertType interface for typed data within your app
 export interface AlertType {
-  // Renamed this from Alert to AlertType to match usage in other components
   id: string;
-  type: AlertCategory; // Updated to reference AlertCategory instead of AlertType
+  type: AlertCategory;
+  severity: AlertSeverity;
+  timestamp: Date;
+  location: string;
+  description: string;
+  sensorData: SensorData;
+  status: AlertStatus;
+  thumbnail: string;
+}
+
+// For backward compatibility with existing code that uses Alert
+export interface Alert {
+  id: string;
+  type: AlertCategory;
   severity: AlertSeverity;
   timestamp: Date;
   location: string;
@@ -119,17 +152,6 @@ export const MOCK_ALERTS: AlertType[] = [
     thumbnail: "/api/placeholder/300/200",
   },
 ];
-export interface Alert {
-  id: string;
-  type: AlertType;
-  severity: AlertSeverity;
-  timestamp: Date;
-  location: string;
-  description: string;
-  sensorData: SensorData;
-  status: AlertStatus;
-  thumbnail: string;
-}
 
 export interface DashboardState {
   selectedAlert: Alert | null;
@@ -143,6 +165,62 @@ export interface ZoneStatus {
   status: "active" | "inactive" | "maintenance";
 }
 
+// Convert WebSocket alert to properly typed AlertType/Alert
+export function convertWSAlertToAlert(
+  wsAlert: WSAlert,
+  id?: string,
+): AlertType {
+  return {
+    id: id || `alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    type: validateAlertCategory(wsAlert.type),
+    severity: validateAlertSeverity(wsAlert.severity),
+    timestamp: new Date(wsAlert.timestamp),
+    location: wsAlert.location,
+    description: wsAlert.description,
+    status: validateAlertStatus(wsAlert.status || "unresolved"),
+    thumbnail: wsAlert.thumbnail || "/api/placeholder/300/200",
+    sensorData: wsAlert.sensorData || {
+      video: false,
+      vibration: false,
+      thermal: false,
+      weather: {
+        temp: 0,
+        conditions: "Unknown",
+      },
+    },
+  };
+}
+
+// Helper functions to validate enum-like types
+function validateAlertCategory(type: string): AlertCategory {
+  const validTypes: AlertCategory[] = ["intrusion", "anomaly", "movement"];
+  return validTypes.includes(type as AlertCategory)
+    ? (type as AlertCategory)
+    : "movement";
+}
+
+function validateAlertSeverity(severity: string): AlertSeverity {
+  const validSeverities: AlertSeverity[] = [
+    "critical",
+    "high",
+    "medium",
+    "low",
+  ];
+  return validSeverities.includes(severity as AlertSeverity)
+    ? (severity as AlertSeverity)
+    : "low";
+}
+
+function validateAlertStatus(status: string): AlertStatus {
+  const validStatuses: AlertStatus[] = [
+    "unresolved",
+    "investigating",
+    "resolved",
+  ];
+  return validStatuses.includes(status as AlertStatus)
+    ? (status as AlertStatus)
+    : "unresolved";
+}
 // types/onboarding.ts
 
 // Security zone priority levels
