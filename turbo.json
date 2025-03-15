@@ -8,9 +8,6 @@
     "AUTH_GOOGLE_ID",
     "AUTH_GOOGLE_SECRET"
   ],
-  "scripts" : {
-    "postinstall" : "turbo run db:generate" 
-  },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
