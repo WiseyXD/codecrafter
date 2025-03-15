@@ -2,8 +2,10 @@ import React from "react";
 import { Clock, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "next-auth/react";
 
 export default function Header(): React.ReactNode {
+  const { data: session } = useSession();
   return (
     <header className="flex justify-between items-center mb-6">
       <div>
@@ -22,8 +24,15 @@ export default function Header(): React.ReactNode {
           Advanced Filters
         </Button>
         <Avatar>
-          <AvatarImage src="/api/placeholder/40/40" alt="User avatar" />
-          <AvatarFallback>SC</AvatarFallback>
+          <AvatarImage
+            src={
+              session?.user?.image
+                ? session.user.image
+                : "/api/placeholder/40/40"
+            }
+            alt="User avatar"
+          />
+          <AvatarFallback>{session?.user?.name?.slice(0, 1)}</AvatarFallback>
         </Avatar>
       </div>
     </header>

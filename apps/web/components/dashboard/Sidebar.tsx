@@ -20,7 +20,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
+import {
+  handleSignInAndRedirect,
+  handleSignOutAndRedirect,
+} from "@/actions/auth";
 
 interface SidebarProps {
   className?: string;
@@ -48,7 +52,6 @@ export default function Sidebar({ className }: SidebarProps): React.ReactNode {
   const bottomNavItems = [
     { name: "Settings", path: "/dashboard/settings", icon: Settings },
     { name: "Help", path: "/dashboard/help", icon: HelpCircle },
-    { name: "Logout", path: "/logout", icon: LogOut },
   ];
 
   return (
@@ -118,20 +121,40 @@ export default function Sidebar({ className }: SidebarProps): React.ReactNode {
                 </Button>
               );
             })}
+
+            {/* Logout Button */}
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50"
+            onClick={async () => {
+              await handleSignOutAndRedirect("/login");
+            }}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </ScrollArea>
 
       <div className="mt-auto p-4 border-t">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="/api/placeholder/32/32" alt="User avatar" />
-            <AvatarFallback>SC</AvatarFallback>
+            <AvatarImage
+              src={
+                session?.user?.image
+                  ? session?.user?.image
+                  : "/api/placeholder/32/32"
+              }
+              alt="User avatar"
+            />
+            <AvatarFallback>{session?.user?.name?.slice(0, 1)}</AvatarFallback>
           </Avatar>
           <div className="grid gap-0.5 text-sm">
-            <div className="font-medium">Security Admin</div>
+            <div className="font-medium">{session?.user?.name}</div>
             <div className="text-xs text-muted-foreground">
-              admin@securewatch.com
+              {session?.user?.email}
             </div>
           </div>
         </div>
