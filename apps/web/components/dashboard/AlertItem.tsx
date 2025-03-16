@@ -1,6 +1,8 @@
 import React from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   ShieldAlert,
   Thermometer,
@@ -11,6 +13,7 @@ import {
   Droplets,
   Car,
   HelpCircle,
+  ExternalLink,
 } from "lucide-react";
 import { AlertType, AlertCategory } from "@/lib/types";
 import { getSeverityColor, getStatusBadgeClass } from "@/lib/utils";
@@ -47,9 +50,17 @@ export default function AlertItem({
   isSelected,
   onSelect,
 }: AlertItemProps): React.ReactNode {
+  const router = useRouter();
+
   // Get the primary alert type (first in the array) for the main icon
   const primaryType =
     alert.types && alert.types.length > 0 ? alert.types[0] : "OTHER";
+
+  // Function to navigate to detail page
+  const goToDetailPage = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick (onSelect)
+    router.push(`/alerts/${alert.id}`);
+  };
 
   return (
     <div
@@ -110,6 +121,19 @@ export default function AlertItem({
             <Thermometer className="h-3 w-3 mr-1" /> Thermal
           </Badge>
         )}
+      </div>
+
+      {/* View Details Button */}
+      <div className="mt-4 flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs"
+          onClick={goToDetailPage}
+        >
+          View Details
+          <ExternalLink className="h-3 w-3 ml-1" />
+        </Button>
       </div>
     </div>
   );
