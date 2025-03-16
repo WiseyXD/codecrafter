@@ -2,7 +2,15 @@ export type FilterType = "all" | AlertStatus;
 export type SeverityFilterType = "all" | AlertSeverity;
 export type AlertSeverity = "critical" | "high" | "medium" | "low";
 export type AlertStatus = "unresolved" | "investigating" | "resolved";
-export type AlertCategory = "intrusion" | "anomaly" | "movement";
+// Updated to match Prisma's AlertType enum
+export type AlertCategory =
+  | "INTRUSION"
+  | "ANOMALY"
+  | "MOVEMENT"
+  | "FIRE"
+  | "FLOOD"
+  | "TRAFFIC"
+  | "OTHER";
 
 export interface SensorData {
   video: boolean;
@@ -16,7 +24,8 @@ export interface SensorData {
 
 // WebSocket alert interface that matches the Django server output
 export interface WSAlert {
-  type: string;
+  // Changed from single type to array of types
+  types: string[];
   severity: string;
   timestamp: string;
   location: string;
@@ -34,10 +43,11 @@ export interface WSAlert {
   };
 }
 
-// Use your existing AlertType interface for typed data within your app
+// Updated AlertType interface to support multiple alert types
 export interface AlertType {
   id: string;
-  type: AlertCategory;
+  // Changed from single type to array of types
+  types: AlertCategory[];
   severity: AlertSeverity;
   timestamp: Date;
   location: string;
@@ -50,7 +60,8 @@ export interface AlertType {
 // For backward compatibility with existing code that uses Alert
 export interface Alert {
   id: string;
-  type: AlertCategory;
+  // Changed from single type to array of types
+  types: AlertCategory[];
   severity: AlertSeverity;
   timestamp: Date;
   location: string;
@@ -68,11 +79,11 @@ export interface AlertCountsType {
   total: number;
 }
 
-// Mock data for demonstration
+// Updated mock data to use multiple alert types
 export const MOCK_ALERTS: AlertType[] = [
   {
     id: "alert-001",
-    type: "intrusion",
+    types: ["INTRUSION", "MOVEMENT"],
     severity: "high",
     timestamp: new Date("2025-03-15T08:24:00"),
     location: "North Perimeter",
@@ -88,7 +99,7 @@ export const MOCK_ALERTS: AlertType[] = [
   },
   {
     id: "alert-002",
-    type: "anomaly",
+    types: ["ANOMALY"],
     severity: "medium",
     timestamp: new Date("2025-03-15T06:45:00"),
     location: "East Gate",
@@ -104,7 +115,7 @@ export const MOCK_ALERTS: AlertType[] = [
   },
   {
     id: "alert-003",
-    type: "movement",
+    types: ["MOVEMENT"],
     severity: "low",
     timestamp: new Date("2025-03-15T03:12:00"),
     location: "South Building",
@@ -121,7 +132,7 @@ export const MOCK_ALERTS: AlertType[] = [
   },
   {
     id: "alert-004",
-    type: "intrusion",
+    types: ["INTRUSION", "ANOMALY"],
     severity: "critical",
     timestamp: new Date("2025-03-15T02:07:00"),
     location: "Server Room",
@@ -137,7 +148,7 @@ export const MOCK_ALERTS: AlertType[] = [
   },
   {
     id: "alert-005",
-    type: "anomaly",
+    types: ["ANOMALY", "TRAFFIC"],
     severity: "medium",
     timestamp: new Date("2025-03-14T23:55:00"),
     location: "West Parking",
@@ -165,14 +176,16 @@ export interface ZoneStatus {
   status: "active" | "inactive" | "maintenance";
 }
 
-// Convert WebSocket alert to properly typed AlertType/Alert
+// Updated conversion function to handle array of types
 export function convertWSAlertToAlert(
   wsAlert: WSAlert,
   id?: string,
 ): AlertType {
   return {
     id: id || `alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    type: validateAlertCategory(wsAlert.type),
+    types: wsAlert.types?.map((type) => validateAlertCategory(type)) || [
+      "MOVEMENT",
+    ],
     severity: validateAlertSeverity(wsAlert.severity),
     timestamp: new Date(wsAlert.timestamp),
     location: wsAlert.location,
@@ -191,12 +204,20 @@ export function convertWSAlertToAlert(
   };
 }
 
-// Helper functions to validate enum-like types
+// Helper functions to validate enum-like types (updated to match Prisma's enum case)
 function validateAlertCategory(type: string): AlertCategory {
-  const validTypes: AlertCategory[] = ["intrusion", "anomaly", "movement"];
+  const validTypes: AlertCategory[] = [
+    "INTRUSION",
+    "ANOMALY",
+    "MOVEMENT",
+    "FIRE",
+    "FLOOD",
+    "TRAFFIC",
+    "OTHER",
+  ];
   return validTypes.includes(type as AlertCategory)
     ? (type as AlertCategory)
-    : "movement";
+    : "MOVEMENT";
 }
 
 function validateAlertSeverity(severity: string): AlertSeverity {
@@ -221,12 +242,10 @@ function validateAlertStatus(status: string): AlertStatus {
     ? (status as AlertStatus)
     : "unresolved";
 }
-// types/onboarding.ts
 
-// Security zone priority levels
+// Rest of the types remain the same
 export type ZonePriority = "low" | "medium" | "high";
 
-// Security zone definition
 export interface SecurityZone {
   id: string;
   name: string;
@@ -234,40 +253,26 @@ export interface SecurityZone {
   priority: ZonePriority;
 }
 
-// Monitoring hours options
 export type MonitoringHours = "24/7" | "business" | "night" | "custom";
-
-// Initial sensors per zone options
 export type InitialSensors = "3" | "5" | "10" | "custom";
-
-// Notification preferences
 export type NotificationType = "email" | "sms" | "both";
 
-// Form data structure
 export interface OnboardingFormData {
-  // City Information
   cityName: string;
   region: string;
   country: string;
   population: string;
-
-  // Admin Information
   adminName: string;
   adminEmail: string;
   adminPhone: string;
   adminDepartment: string;
-
-  // System Configuration
   securityZones: SecurityZone[];
   initialSensors: InitialSensors;
   monitoringHours: MonitoringHours;
-
-  // Confirmation
   agreeToTerms: boolean;
   notificationType: NotificationType;
 }
 
-// Form errors structure - matches form fields that require validation
 export interface FormErrors {
   cityName?: string;
   country?: string;
@@ -279,10 +284,8 @@ export interface FormErrors {
   [key: string]: string | undefined;
 }
 
-// Form steps
 export type FormStep = 0 | 1 | 2 | 3 | 4;
 
-// API response for onboarding
 export interface OnboardingResponse {
   success: boolean;
   message: string;

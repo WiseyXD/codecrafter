@@ -196,8 +196,24 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
         else if (message.type === "alert" && message.data) {
           const wsAlert = message.data;
 
+          // Handle compatibility with old single-type format
+          // If the incoming alert has a single 'type' property but no 'types' array
+          if (
+            "type" in wsAlert &&
+            (!wsAlert.types || !Array.isArray(wsAlert.types))
+          ) {
+            // Convert the single type to an array of types
+            wsAlert.types = [wsAlert.type as string];
+          }
+
           // Explicitly check if data has the expected structure
-          if (!wsAlert.type || !wsAlert.severity || !wsAlert.location) {
+          if (
+            !wsAlert.types ||
+            !wsAlert.types.length ||
+            !wsAlert.severity ||
+            !wsAlert.location
+          ) {
+            console.error("Malformed alert data:", wsAlert);
             return;
           }
 
@@ -215,7 +231,8 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
           // Create toast notification with appropriate style based on severity
           const toastContent = (
             <div>
-              <strong>{typedAlert.type}</strong>: {typedAlert.description}
+              <strong>{typedAlert.types.join(", ")}</strong>:{" "}
+              {typedAlert.description}
               <div className="text-sm text-gray-500">{typedAlert.location}</div>
             </div>
           );
@@ -364,7 +381,7 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
               >
                 <div className="flex justify-between">
                   <span className="font-bold">
-                    {alert.type} ({alert.severity})
+                    {alert.types.join(", ")} ({alert.severity})
                   </span>
                   <span className="text-sm text-gray-500">
                     {alert.timestamp.toLocaleTimeString()}

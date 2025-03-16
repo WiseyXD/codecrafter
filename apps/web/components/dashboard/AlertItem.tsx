@@ -1,7 +1,17 @@
 import React from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { ShieldAlert, Thermometer, MapPin, Camera, Bell } from "lucide-react";
+import {
+  ShieldAlert,
+  Thermometer,
+  MapPin,
+  Camera,
+  Bell,
+  Lamp,
+  Droplets,
+  Car,
+  HelpCircle,
+} from "lucide-react";
 import { AlertType, AlertCategory } from "@/lib/types";
 import { getSeverityColor, getStatusBadgeClass } from "@/lib/utils";
 
@@ -11,15 +21,40 @@ interface AlertItemProps {
   onSelect: () => void;
 }
 
+// Helper function to get the appropriate icon for an alert type
+const getAlertTypeIcon = (type: string) => {
+  switch (type.toUpperCase()) {
+    case "INTRUSION":
+      return <ShieldAlert className="h-4 w-4" />;
+    case "ANOMALY":
+      return <Thermometer className="h-4 w-4" />;
+    case "MOVEMENT":
+      return <MapPin className="h-4 w-4" />;
+    case "FIRE":
+      return <Lamp className="h-4 w-4" />;
+    case "FLOOD":
+      return <Droplets className="h-4 w-4" />;
+    case "TRAFFIC":
+      return <Car className="h-4 w-4" />;
+    case "OTHER":
+    default:
+      return <HelpCircle className="h-4 w-4" />;
+  }
+};
+
 export default function AlertItem({
   alert,
   isSelected,
   onSelect,
 }: AlertItemProps): React.ReactNode {
+  // Get the primary alert type (first in the array) for the main icon
+  const primaryType =
+    alert.types && alert.types.length > 0 ? alert.types[0] : "OTHER";
+
   return (
     <div
       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-        isSelected ? "border-blue-500 bg-blue-50" : "hover:bg-gray-400"
+        isSelected ? "border-blue-500 " : "hover:bg-gray-900"
       }`}
       onClick={onSelect}
     >
@@ -28,9 +63,7 @@ export default function AlertItem({
           <div
             className={`p-2 rounded-full ${getSeverityColor(alert.severity)} text-white`}
           >
-            {alert.type === "intrusion" && <ShieldAlert className="h-5 w-5" />}
-            {alert.type === "anomaly" && <Thermometer className="h-5 w-5" />}
-            {alert.type === "movement" && <MapPin className="h-5 w-5" />}
+            {getAlertTypeIcon(primaryType!)}
           </div>
           <div>
             <h4 className="font-medium">{alert.description}</h4>
@@ -43,7 +76,25 @@ export default function AlertItem({
           {alert.status}
         </Badge>
       </div>
-      <div className="flex mt-3 space-x-2">
+
+      {/* Alert type badges */}
+      <div className="flex flex-wrap mt-2 gap-1">
+        {alert.types.map((type, index) => (
+          <Badge
+            key={index}
+            variant="secondary"
+            className="text-xs flex items-center"
+          >
+            {getAlertTypeIcon(type)}
+            <span className="ml-1">
+              {type.charAt(0) + type.slice(1).toLowerCase()}
+            </span>
+          </Badge>
+        ))}
+      </div>
+
+      {/* Sensor data badges */}
+      <div className="flex mt-3 space-x-2 flex-wrap gap-1">
         {alert.sensorData.video && (
           <Badge variant="outline" className="text-xs">
             <Camera className="h-3 w-3 mr-1" /> Video

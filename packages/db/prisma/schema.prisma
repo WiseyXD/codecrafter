@@ -156,7 +156,7 @@ model SensorData {
 
 model Alert {
   id          String       @id @default(cuid())
-  type        AlertType
+  types       AlertType[]  // Changed from 'type' to 'types' as an array
   severity    Severity
   timestamp   DateTime     @default(now())
   location    String

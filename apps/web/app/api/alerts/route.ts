@@ -1,4 +1,4 @@
-// app/api/alerts/route.js
+// app/api/alerts/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@repo/db";
@@ -7,102 +7,171 @@ import {
   Severity,
   AlertStatus as PrismaAlertStatus,
 } from "@prisma/client";
+
 // In a real implementation, this would connect to your database
 // or surveillance system's API to fetch real-time alerts
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  try {
+    const { searchParams } = new URL(request.url);
 
-  // Parse query parameters
-  const status = searchParams.get("status");
-  const severity = searchParams.get("severity");
-  const timeframe = searchParams.get("timeframe") || "24h";
+    // Parse query parameters
+    const status = searchParams.get("status");
+    const severity = searchParams.get("severity");
+    const timeframe = searchParams.get("timeframe") || "24h";
+    const cityId = searchParams.get("cityId");
+    const zoneId = searchParams.get("zoneId");
+    const limit = Number(searchParams.get("limit")) || 50;
+    const offset = Number(searchParams.get("offset")) || 0;
 
-  // Mock data for demonstration
-  const alerts = [
-    {
-      id: "alert-001",
-      type: "intrusion",
-      severity: "high",
-      timestamp: new Date("2025-03-15T08:24:00"),
-      location: "North Perimeter",
-      description: "Multiple individuals detected crossing perimeter fence",
-      sensorData: {
-        video: true,
-        vibration: true,
-        thermal: false,
-        weather: { temp: 18, conditions: "Clear" },
+    // Build where conditions for Prisma query
+    const whereConditions: any = {};
+
+    // Add cityId filter if provided
+    if (cityId) {
+      whereConditions.cityId = cityId;
+    }
+
+    // Add zoneId filter if provided
+    if (zoneId) {
+      whereConditions.zoneId = zoneId;
+    }
+
+    // Add status filter if provided
+    if (status && status !== "all") {
+      whereConditions.status = status.toUpperCase() as PrismaAlertStatus;
+    }
+
+    // Add severity filter if provided
+    if (severity && severity !== "all") {
+      whereConditions.severity = severity.toUpperCase() as Severity;
+    }
+
+    // Apply timeframe filter
+    const now = new Date();
+    let timeLimit = new Date();
+
+    switch (timeframe) {
+      case "1h":
+        timeLimit.setHours(now.getHours() - 1);
+        break;
+      case "6h":
+        timeLimit.setHours(now.getHours() - 6);
+        break;
+      case "24h":
+        timeLimit.setHours(now.getHours() - 24);
+        break;
+      case "7d":
+        timeLimit.setDate(now.getDate() - 7);
+        break;
+      case "30d":
+        timeLimit.setDate(now.getDate() - 30);
+        break;
+      case "all":
+        // Don't set a time limit
+        break;
+      default:
+        timeLimit.setHours(now.getHours() - 24);
+    }
+
+    // Only add timestamp condition if not querying all timeframes
+    if (timeframe !== "all") {
+      whereConditions.timestamp = {
+        gte: timeLimit,
+      };
+    }
+
+    // Get alerts count with these filters
+    const totalCount = await prisma.alert.count({
+      where: whereConditions,
+    });
+
+    // Fetch alerts from database with pagination
+    const alerts = await prisma.alert.findMany({
+      where: whereConditions,
+      include: {
+        sensors: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        sensorData: {
+          select: {
+            dataValue: true,
+          },
+          take: 1, // Just get the most recent sensor data
+          orderBy: {
+            timestamp: "desc",
+          },
+        },
       },
-      status: "unresolved",
-      thumbnail: "/api/placeholder/300/200",
-    },
-    {
-      id: "alert-002",
-      type: "anomaly",
-      severity: "medium",
-      timestamp: new Date("2025-03-15T06:45:00"),
-      location: "East Gate",
-      description: "Unusual heat signature detected near storage area",
-      sensorData: {
-        video: false,
-        vibration: false,
-        thermal: true,
-        weather: { temp: 16, conditions: "Foggy" },
+      orderBy: {
+        timestamp: "desc",
       },
-      status: "investigating",
-      thumbnail: "/api/placeholder/300/200",
-    },
-    // ... more alerts would be here
-  ];
+      skip: offset,
+      take: limit,
+    });
 
-  // Filter the alerts based on query parameters
-  let filteredAlerts = [...alerts];
+    // Transform database alerts to match the expected format for the frontend
+    const transformedAlerts = alerts.map((alert) => {
+      // Extract sensor data or use default values
+      const sensorDataRaw = (alert.sensorData[0]?.dataValue as any) || {};
 
-  if (status) {
-    filteredAlerts = filteredAlerts.filter((alert) => alert.status === status);
-  }
+      // Convert to expected frontend format
+      return {
+        id: alert.id,
+        types: alert.types as string[],
+        severity: alert.severity.toLowerCase(),
+        timestamp: alert.timestamp,
+        location: alert.location,
+        description: alert.description,
+        status: alert.status.toLowerCase(),
+        thumbnail: alert.thumbnail || "/api/placeholder/300/200",
+        sensorData: {
+          video:
+            sensorDataRaw.video === true ||
+            alert.sensors.some((s) => s.type === "VIDEO"),
+          vibration:
+            sensorDataRaw.vibration === true ||
+            alert.sensors.some((s) => s.type === "VIBRATION"),
+          thermal:
+            sensorDataRaw.thermal === true ||
+            alert.sensors.some((s) => s.type === "THERMAL"),
+          weather: sensorDataRaw.weather || {
+            temp: 0,
+            conditions: "Unknown",
+          },
+        },
+      };
+    });
 
-  if (severity) {
-    filteredAlerts = filteredAlerts.filter(
-      (alert) => alert.severity === severity,
+    // Return the alerts with pagination metadata
+    return NextResponse.json({
+      alerts: transformedAlerts,
+      meta: {
+        total: totalCount,
+        offset,
+        limit,
+        timeframe,
+        generated: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching alerts:", error);
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Unknown error",
+        alerts: [],
+        meta: {
+          total: 0,
+          generated: new Date().toISOString(),
+        },
+      },
+      { status: 500 },
     );
   }
-
-  // Apply timeframe filter
-  const now = new Date();
-  let timeLimit = new Date();
-
-  switch (timeframe) {
-    case "1h":
-      timeLimit.setHours(now.getHours() - 1);
-      break;
-    case "6h":
-      timeLimit.setHours(now.getHours() - 6);
-      break;
-    case "24h":
-      timeLimit.setHours(now.getHours() - 24);
-      break;
-    case "7d":
-      timeLimit.setDate(now.getDate() - 7);
-      break;
-    default:
-      timeLimit.setHours(now.getHours() - 24);
-  }
-
-  filteredAlerts = filteredAlerts.filter(
-    (alert) => new Date(alert.timestamp) >= timeLimit,
-  );
-
-  // Return the filtered alerts
-  return NextResponse.json({
-    alerts: filteredAlerts,
-    meta: {
-      total: filteredAlerts.length,
-      timeframe,
-      generated: new Date().toISOString(),
-    },
-  });
 }
-
 // Map WebSocket alert type to database AlertType enum
 const mapAlertType = (type: string): PrismaAlertType => {
   const typeMap: Record<string, PrismaAlertType> = {
@@ -221,10 +290,29 @@ export async function POST(request: NextRequest) {
     // Find or create a sensor based on the alert location
     const sensorId = await findOrCreateSensor(alert.location, zoneId, cityId);
 
-    // Map the WebSocket alert to the database Alert schema
+    // Handle incoming alert types
+    let alertTypes: string[] = [];
+
+    // Check if the alert has types array
+    if (alert.types && Array.isArray(alert.types)) {
+      alertTypes = alert.types;
+    }
+    // Check for legacy single type field
+    else if (alert.type) {
+      alertTypes = [alert.type];
+    }
+    // Default to OTHER if no type information is found
+    else {
+      alertTypes = ["OTHER"];
+    }
+
+    // Map string types to PrismaAlertType enum values
+    const mappedTypes = alertTypes.map((type) => mapAlertType(type));
+
+    // Create the alert with multiple types
     const createdAlert = await prisma.alert.create({
       data: {
-        type: mapAlertType(alert.type),
+        types: mappedTypes,
         severity: mapSeverity(alert.severity),
         timestamp: new Date(alert.timestamp),
         location: alert.location,
