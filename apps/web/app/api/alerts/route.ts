@@ -181,7 +181,12 @@ const mapAlertType = (type: string): PrismaAlertType => {
     fire: PrismaAlertType.FIRE,
     flood: PrismaAlertType.FLOOD,
     traffic: PrismaAlertType.TRAFFIC,
+    other: PrismaAlertType.OTHER,
+    violence: PrismaAlertType.VIOLENCE,
+    crowded: PrismaAlertType.CROWDED,
+    none: PrismaAlertType.NONE,
   };
+
   return typeMap[type.toLowerCase()] || PrismaAlertType.OTHER;
 };
 

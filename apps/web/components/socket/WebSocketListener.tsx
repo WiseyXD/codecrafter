@@ -21,7 +21,7 @@ const WebSocketListener = ({ cityId }: { cityId: string }) => {
   const [isStoringAlert, setIsStoringAlert] = useState(false);
 
   // WebSocket server URL
-  const WS_URL = "wss://1826-103-218-100-74.ngrok-free.app/ws/";
+  const WS_URL = "wss://4d5b-103-218-100-74.ngrok-free.app/ws/";
 
   const [currentUrl] = useState(WS_URL);
 

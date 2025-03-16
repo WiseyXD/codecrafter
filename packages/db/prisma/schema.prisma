@@ -177,7 +177,11 @@ model Alert {
 }
 
 enum AlertType {
+  CROWDED
+  VIOLENCE
+  NONE
   INTRUSION
+  AUDIO_ANOMALY
   ANOMALY
   MOVEMENT
   FIRE
